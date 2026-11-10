@@ -1,5 +1,5 @@
 [project]
 name = "app"
 version = "0.1.0"
-dependencies = [ "flask>=3.1, <4", "gnani-vachana>=0.9, <1", "python-dotenv>=1.0, <2", "requests>=2.28, <3" ]
+dependencies = [ "flask>=3.1, <4", "gnani-vachana>=0.9, <1", "python-dotenv>=1.0, <2", "requests>=2.28, <3", "psycopg[binary]>=3.2, <4" ]
 requires-python = ">=3.12,<3.13"

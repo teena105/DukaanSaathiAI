@@ -89,6 +89,13 @@
     <header>
         <h1>🛍️ DukaanSaathi AI</h1>
         <p>Smart Voice-Based Shop Management</p>
+        <div class="account-bar">
+            <span>{{ session.get('shop_name', 'Your shop') }}</span>
+            <form action="{{ url_for('logout') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">Log out</button>
+            </form>
+        </div>
     </header>
 
     <main>
@@ -184,6 +191,8 @@
                   method="POST"
                   enctype="multipart/form-data">
 
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
                 <input type="file"
                        id="audioFile"
                        name="audio"
@@ -204,7 +213,9 @@
 
             <h2>🔊 Test Voice Response</h2>
 
-            <form id="ttsForm">
+            <form id="ttsForm" method="POST">
+
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <input
                     type="text"
@@ -229,6 +240,8 @@
             <h2>Add New Product</h2>
 
             <form action="/add_product" method="POST">
+
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <input type="text"
                        name="name"
@@ -272,6 +285,8 @@
             <h2>Record a Sale</h2>
 
             <form action="/sell_product" method="POST">
+
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <input type="text"
                        name="customer_name"
@@ -353,6 +368,7 @@
                                     method="POST"
                                     onsubmit="return confirm('Are you sure you want to delete this product?');"
                                 >
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button type="submit" class="delete-btn">
                                         🗑️ Delete
                                     </button>
@@ -385,6 +401,7 @@
             <p>These products are hidden from active inventory. Past sales remain saved.</p>
             {% for product in archived_products %}
             <form action="{{ url_for('restore_product', product_id=product.id) }}" method="POST" style="margin-bottom: 10px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <span>{{ product.name }}</span>
                 <button type="submit">Restore to Inventory</button>
             </form>
@@ -409,10 +426,12 @@
             <p>Is this sale correct? Please confirm before saving.</p>
 
             <form action="{{ url_for('confirm_voice_sale') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit">✅ Confirm Sale</button>
             </form>
 
             <form action="{{ url_for('cancel_voice_sale') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit">❌ Cancel Sale</button>
             </form>
 
@@ -427,9 +446,11 @@
             <p>Opening stock: {{ pending_product.quantity }} {{ pending_product.unit }}</p>
             <p>Price per {{ pending_product.unit }}: ₹{{ "%.2f"|format(pending_product.price) }}</p>
             <form action="{{ url_for('confirm_voice_product') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit">✅ Confirm Product</button>
             </form>
             <form action="{{ url_for('cancel_voice_product') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit">❌ Cancel</button>
             </form>
         </section>

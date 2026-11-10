@@ -30,6 +30,27 @@ header p {
     margin: 0;
 }
 
+.account-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.account-bar form {
+    width: auto;
+    margin: 0;
+}
+
+.account-bar button {
+    min-height: 40px;
+    padding: 8px 16px;
+    color: #263b80;
+    background: white;
+}
+
 main {
     width: min(100%, 1086px);
     margin: clamp(18px, 4vw, 30px) auto;
@@ -144,6 +165,28 @@ th, td {
     white-space: nowrap;
 }
 
+.auth-main {
+    max-width: 540px;
+}
+
+.auth-panel form {
+    align-items: stretch;
+    flex-direction: column;
+}
+
+.auth-panel input,
+.auth-panel button {
+    width: 100%;
+}
+
+.auth-panel label {
+    margin-bottom: -6px;
+}
+
+.auth-panel a {
+    color: #263b80;
+}
+
 audio {
     display: block;
     width: min(100%, 400px);
@@ -185,6 +228,15 @@ audio {
     form button {
         width: 100%;
         min-width: 0;
+    }
+
+    .account-bar form {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .account-bar button {
+        width: auto;
     }
 
     form label {
