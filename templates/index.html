@@ -258,6 +258,50 @@
         </section>
         </div>
 
+        <!-- Voice Sale Confirmation -->
+        {% if pending_sale %}
+        <section class="panel" id="saleConfirmation">
+            <h2>🔔 Review Voice Sale</h2>
+            <p>Recognized voice: {{ pending_sale.transcript }}</p>
+            <p>Customer: {{ pending_sale.customer_name }}</p>
+            <p>Product: {{ pending_sale.product_name }}</p>
+            <p>Quantity: {{ pending_sale.quantity }} {{ pending_sale.unit }}</p>
+            <p>Price per unit: ₹{{ "%.2f"|format(pending_sale.unit_price) }}</p>
+            <h3>Total Amount: ₹{{ "%.2f"|format(pending_sale.total) }}</h3>
+            <p>Please review and confirm this sale.</p>
+            <div class="confirmation-actions">
+                <form action="{{ url_for('confirm_voice_sale') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit">✅ Accept Sale</button>
+                </form>
+                <form action="{{ url_for('cancel_voice_sale') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="decline-button" type="submit">❌ Decline</button>
+                </form>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if pending_product %}
+        <section class="panel" id="productConfirmation">
+            <h2>🔔 Review New Product</h2>
+            <p>Recognized voice: {{ pending_product.transcript }}</p>
+            <p>Product: {{ pending_product.name }}</p>
+            <p>Opening stock: {{ pending_product.quantity }} {{ pending_product.unit }}</p>
+            <p>Price per {{ pending_product.unit }}: ₹{{ "%.2f"|format(pending_product.price) }}</p>
+            <div class="confirmation-actions">
+                <form action="{{ url_for('confirm_voice_product') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit">✅ Accept Product</button>
+                </form>
+                <form action="{{ url_for('cancel_voice_product') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="decline-button" type="submit">❌ Decline</button>
+                </form>
+            </div>
+        </section>
+        {% endif %}
+
         <!-- Inventory -->
         <section class="panel">
 
@@ -339,53 +383,6 @@
                 <button type="submit">Restore to Inventory</button>
             </form>
             {% endfor %}
-        </section>
-        {% endif %}
-
-        <!-- Voice Sale Confirmation -->
-        {% if pending_sale %}
-        <section class="panel" id="saleConfirmation">
-
-            <h2>🔔 Confirm Voice Sale</h2>
-
-            <p>Recognized Voice: {{ pending_sale.transcript }}</p>
-            <p>Customer: {{ pending_sale.customer_name }}</p>
-            <p>Product: {{ pending_sale.product_name }}</p>
-            <p>Quantity: {{ pending_sale.quantity }} {{ pending_sale.unit }}</p>
-            <p>Price per unit: ₹{{ "%.2f"|format(pending_sale.unit_price) }}</p>
-
-            <h3>Total Amount: ₹{{ "%.2f"|format(pending_sale.total) }}</h3>
-
-            <p>Is this sale correct? Please confirm before saving.</p>
-
-            <form action="{{ url_for('confirm_voice_sale') }}" method="POST">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit">✅ Confirm Sale</button>
-            </form>
-
-            <form action="{{ url_for('cancel_voice_sale') }}" method="POST">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit">❌ Cancel Sale</button>
-            </form>
-
-        </section>
-        {% endif %}
-
-        {% if pending_product %}
-        <section class="panel" id="productConfirmation">
-            <h2>🔔 Confirm Voice Product</h2>
-            <p>Recognized voice: {{ pending_product.transcript }}</p>
-            <p>Product: {{ pending_product.name }}</p>
-            <p>Opening stock: {{ pending_product.quantity }} {{ pending_product.unit }}</p>
-            <p>Price per {{ pending_product.unit }}: ₹{{ "%.2f"|format(pending_product.price) }}</p>
-            <form action="{{ url_for('confirm_voice_product') }}" method="POST">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit">✅ Confirm Product</button>
-            </form>
-            <form action="{{ url_for('cancel_voice_product') }}" method="POST">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit">❌ Cancel</button>
-            </form>
         </section>
         {% endif %}
 

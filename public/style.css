@@ -307,6 +307,10 @@ tbody tr:hover td { background: #fafbfe; }
 .delete-form { width: max-content; max-width: 100%; flex: 0 0 auto; margin: 0; }
 .delete-form button { min-height: 36px; padding: 7px 11px; background: #fff1f2; color: var(--red); box-shadow: none; white-space: nowrap; }
 .delete-form button:hover { background: #ffe0e4; box-shadow: none; }
+.confirmation-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+.confirmation-actions form { margin: 0; }
+.decline-button { background: #fff1f2; color: var(--red); box-shadow: none; }
+.decline-button:hover { background: #ffe0e4; box-shadow: none; }
 audio { display: block; width: min(100%, 400px); max-width: 100%; }
 
 @media (max-width: 900px) {
@@ -335,6 +339,8 @@ audio { display: block; width: min(100%, 400px); max-width: 100%; }
     .panel-heading .panel-note { max-width: 42%; overflow: hidden; text-overflow: ellipsis; }
     form { align-items: stretch; flex-direction: column; gap: 10px; }
     form input, form select, form button { width: 100%; min-width: 0; }
+    .confirmation-actions form { width: auto; flex-direction: row; }
+    .confirmation-actions button { width: auto; }
     .workflow-grid form { grid-template-columns: 1fr; gap: 9px; }
     .workflow-grid .form-submit { width: 100%; }
     .voice-buttons { gap: 9px; }
