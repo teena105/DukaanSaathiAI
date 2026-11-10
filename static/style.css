@@ -1,0 +1,112 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f6fb;
+    color: #202638;
+}
+
+header {
+    background: #263b80;
+    color: white;
+    padding: 25px 8%;
+}
+
+header h1 {
+    margin: 0 0 8px;
+}
+
+header p {
+    margin: 0;
+}
+
+main {
+    max-width: 1050px;
+    margin: 30px auto;
+    padding: 0 18px;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.stat-card, .panel {
+    background: white;
+    padding: 22px;
+    border-radius: 12px;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.06);
+}
+
+.stat-card h3 {
+    margin-top: 0;
+    color: #65708a;
+}
+
+.stat-card p {
+    font-size: 27px;
+    font-weight: bold;
+    margin-bottom: 0;
+}
+
+.panel {
+    margin-top: 22px;
+}
+
+form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+input, select {
+    flex: 1;
+    min-width: 160px;
+    padding: 12px;
+    border: 1px solid #ccd2df;
+    border-radius: 7px;
+}
+
+button {
+    padding: 12px 20px;
+    border: 0;
+    border-radius: 7px;
+    background: #263b80;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #18295f;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    text-align: left;
+    padding: 13px;
+    border-bottom: 1px solid #e5e8ef;
+}
+
+.message {
+    background: #e5f5e9;
+    padding: 12px;
+    border-radius: 7px;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+@media (max-width: 600px) {
+    form {
+        flex-direction: column;
+    }
+}

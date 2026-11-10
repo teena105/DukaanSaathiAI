@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DukaanSaathi AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .voice-panel {
+            text-align: center;
+            background: #ffffff;
+        }
+
+        .voice-panel p {
+            color: #64748b;
+        }
+
+        .voice-buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .voice-buttons button {
+            padding: 12px 22px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            color: white;
+        }
+
+        #startBtn {
+            background: #16a34a;
+        }
+
+        #stopBtn {
+            background: #dc2626;
+        }
+
+        #submitBtn {
+            background: #293f82;
+        }
+
+        .voice-buttons button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #recordingStatus {
+            font-weight: bold;
+            margin: 15px;
+        }
+
+        #audioPreview {
+            width: 100%;
+            max-width: 400px;
+            margin: 15px auto;
+        }
+
+        #voiceForm {
+            margin-top: 15px;
+        }
+
+        .delete-btn {
+            background-color: #dc2626;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .delete-btn:hover {
+            background-color: #b91c1c;
+        }
+
+        .delete-form {
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>🛍️ DukaanSaathi AI</h1>
+        <p>Smart Voice-Based Shop Management</p>
+    </header>
+
+    <main>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <p class="message">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Dashboard Statistics -->
+        <section class="stats">
+
+            <div class="stat-card">
+                <h3>Total Products</h3>
+                <p>{{ total_products }}</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Total Sales</h3>
+                <p>₹{{ "%.2f"|format(total_sales) }}</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Low Stock Items</h3>
+                <p>{{ low_stock }}</p>
+            </div>
+
+        </section>
+
+        <!-- Recent Sales -->
+        <section class="panel">
+            <h2>Recent Sales</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>When</th>
+                            <th>Product</th>
+                            <th>Customer</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in recent_sales %}
+                        <tr>
+                            <td>{{ sale.sale_date }}</td>
+                            <td>{{ sale.product_name or 'Deleted product' }}</td>
+                            <td>{{ sale.customer_name or 'Walk-in' }}</td>
+                            <td>{{ sale.quantity }} {{ sale.unit }}</td>
+                            <td>₹{{ "%.2f"|format(sale.total) }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5">No sales recorded yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Voice Assistant -->
+        <section class="panel voice-panel">
+
+            <h2>🎤 DukaanSaathi Voice Assistant</h2>
+
+            <p>
+                Speak in your language to manage your shop easily.
+            </p>
+
+            <div class="voice-buttons">
+
+                <button type="button" id="startBtn">
+                    🎙️ Start Recording
+                </button>
+
+                <button type="button" id="stopBtn" disabled>
+                    ⏹ Stop Recording
+                </button>
+
+            </div>
+
+            <p id="recordingStatus">
+                Ready to record your voice.
+            </p>
+
+            <audio id="audioPreview" controls hidden></audio>
+
+            <form id="voiceForm"
+                  action="{{ url_for('transcribe_audio') }}"
+                  method="POST"
+                  enctype="multipart/form-data">
+
+                <input type="file"
+                       id="audioFile"
+                       name="audio"
+                       accept="audio/*"
+                       hidden
+                       required>
+
+                <button type="submit" id="submitBtn" disabled>
+                    Submit Voice
+                </button>
+
+            </form>
+
+        </section>
+
+        <!-- Test Voice Response -->
+        <section class="panel">
+
+            <h2>🔊 Test Voice Response</h2>
+
+            <form id="ttsForm">
+
+                <input
+                    type="text"
+                    name="text"
+                    placeholder="Enter text to speak"
+                    required
+                >
+
+                <button type="submit">Generate Voice</button>
+
+            </form>
+
+            <audio id="ttsPlayer" controls hidden></audio>
+
+            <p id="ttsStatus"></p>
+
+        </section>
+
+        <!-- Add New Product -->
+        <section class="panel">
+
+            <h2>Add New Product</h2>
+
+            <form action="/add_product" method="POST">
+
+                <input type="text"
+                       name="name"
+                       placeholder="Product name (e.g. Sugar)"
+                       required>
+
+                <label>Product Unit:</label>
+
+                <select name="unit" required>
+                    <option value="kg">Kilogram (kg)</option>
+                    <option value="g">Gram (g)</option>
+                    <option value="litre">Litre</option>
+                    <option value="ml">Millilitre (ml)</option>
+                    <option value="piece">Piece</option>
+                    <option value="packet">Packet</option>
+                </select>
+
+                <input type="number"
+                       name="price"
+                       placeholder="Selling price per unit (₹)"
+                       min="0.01"
+                       step="0.01"
+                       required>
+
+                <input type="number"
+                       name="stock"
+                       placeholder="Available stock quantity"
+                       min="0"
+                       step="any"
+                       required>
+
+                <button type="submit">Add Product</button>
+
+            </form>
+
+        </section>
+
+        <!-- Record a Sale -->
+        <section class="panel">
+
+            <h2>Record a Sale</h2>
+
+            <form action="/sell_product" method="POST">
+
+                <input type="text"
+                       name="customer_name"
+                       placeholder="Customer Name (Optional)">
+
+                <label>Select Product:</label>
+
+                <select name="product_id" required>
+
+                    <option value="">Select a product</option>
+
+                    {% for product in products %}
+
+                        <option value="{{ product.id }}">
+                            {{ product.name }} —
+                            ₹{{ "%.2f"|format(product.price) }}/{{ product.unit }}
+                            (Available: {{ product.stock }} {{ product.unit }})
+                        </option>
+
+                    {% endfor %}
+
+                </select>
+
+                <label>Quantity Sold:</label>
+
+                <input type="number"
+                       name="quantity"
+                       placeholder="Enter quantity (e.g. 0.5)"
+                       min="0.01"
+                       step="any"
+                       required>
+
+                <button type="submit">Record Sale</button>
+
+            </form>
+
+        </section>
+
+        <!-- Inventory -->
+        <section class="panel">
+
+            <h2>Inventory</h2>
+
+            <div class="table-wrap">
+
+                <table>
+
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Price Per Unit</th>
+                            <th>Available Stock</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for product in products %}
+
+                        <tr>
+
+                            <td>
+                                {{ product.name }}
+                            </td>
+
+                            <td>
+                                ₹{{ "%.2f"|format(product.price) }}/{{ product.unit }}
+                            </td>
+
+                            <td>
+                                {{ product.stock }} {{ product.unit }}
+                            </td>
+
+                            <td>
+                                <form
+                                    class="delete-form"
+                                    action="{{ url_for('delete_product', product_id=product.id) }}"
+                                    method="POST"
+                                    onsubmit="return confirm('Are you sure you want to delete this product?');"
+                                >
+                                    <button type="submit" class="delete-btn">
+                                        🗑️ Delete
+                                    </button>
+                                </form>
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="4">
+                                No products added yet.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+        {% if archived_products %}
+        <section class="panel">
+            <h2>Archived Products</h2>
+            <p>These products are hidden from active inventory. Past sales remain saved.</p>
+            {% for product in archived_products %}
+            <form action="{{ url_for('restore_product', product_id=product.id) }}" method="POST" style="margin-bottom: 10px;">
+                <span>{{ product.name }}</span>
+                <button type="submit">Restore to Inventory</button>
+            </form>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        <!-- Voice Sale Confirmation -->
+        {% if pending_sale %}
+        <section class="panel" id="saleConfirmation">
+
+            <h2>🔔 Confirm Voice Sale</h2>
+
+            <p>Recognized Voice: {{ pending_sale.transcript }}</p>
+            <p>Customer: {{ pending_sale.customer_name }}</p>
+            <p>Product: {{ pending_sale.product_name }}</p>
+            <p>Quantity: {{ pending_sale.quantity }} {{ pending_sale.unit }}</p>
+            <p>Price per unit: ₹{{ "%.2f"|format(pending_sale.unit_price) }}</p>
+
+            <h3>Total Amount: ₹{{ "%.2f"|format(pending_sale.total) }}</h3>
+
+            <p>Is this sale correct? Please confirm before saving.</p>
+
+            <form action="{{ url_for('confirm_voice_sale') }}" method="POST">
+                <button type="submit">✅ Confirm Sale</button>
+            </form>
+
+            <form action="{{ url_for('cancel_voice_sale') }}" method="POST">
+                <button type="submit">❌ Cancel Sale</button>
+            </form>
+
+        </section>
+        {% endif %}
+
+        {% if pending_product %}
+        <section class="panel" id="productConfirmation">
+            <h2>🔔 Confirm Voice Product</h2>
+            <p>Recognized voice: {{ pending_product.transcript }}</p>
+            <p>Product: {{ pending_product.name }}</p>
+            <p>Opening stock: {{ pending_product.quantity }} {{ pending_product.unit }}</p>
+            <p>Price per {{ pending_product.unit }}: ₹{{ "%.2f"|format(pending_product.price) }}</p>
+            <form action="{{ url_for('confirm_voice_product') }}" method="POST">
+                <button type="submit">✅ Confirm Product</button>
+            </form>
+            <form action="{{ url_for('cancel_voice_product') }}" method="POST">
+                <button type="submit">❌ Cancel</button>
+            </form>
+        </section>
+        {% endif %}
+
+    </main>
+
+    <!-- Voice Recording JavaScript -->
+
+    <script>
+
+        let mediaRecorder;
+        let audioChunks = [];
+
+        const startBtn = document.getElementById("startBtn");
+        const stopBtn = document.getElementById("stopBtn");
+        const submitBtn = document.getElementById("submitBtn");
+
+        const statusText = document.getElementById("recordingStatus");
+        const audioPreview = document.getElementById("audioPreview");
+        const audioFile = document.getElementById("audioFile");
+
+        // Convert browser audio into WAV format
+
+        function convertToWav(audioBuffer) {
+
+            const channels = audioBuffer.numberOfChannels;
+            const sampleRate = audioBuffer.sampleRate;
+            const frames = audioBuffer.length;
+
+            const buffer = new ArrayBuffer(44 + frames * channels * 2);
+            const view = new DataView(buffer);
+
+            function writeString(offset, text) {
+
+                for (let i = 0; i < text.length; i++) {
+                    view.setUint8(offset + i, text.charCodeAt(i));
+                }
+
+            }
+
+            writeString(0, "RIFF");
+            view.setUint32(4, 36 + frames * channels * 2, true);
+            writeString(8, "WAVE");
+            writeString(12, "fmt ");
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, channels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * channels * 2, true);
+            view.setUint16(32, channels * 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, "data");
+            view.setUint32(40, frames * channels * 2, true);
+
+            const channelData = [];
+
+            for (let channel = 0; channel < channels; channel++) {
+                channelData.push(audioBuffer.getChannelData(channel));
+            }
+
+            let offset = 44;
+
+            for (let i = 0; i < frames; i++) {
+
+                for (let channel = 0; channel < channels; channel++) {
+
+                    let sample = Math.max(
+                        -1,
+                        Math.min(1, channelData[channel][i])
+                    );
+
+                    const value = sample < 0
+                        ? sample * 32768
+                        : sample * 32767;
+
+                    view.setInt16(offset, value, true);
+                    offset += 2;
+
+                }
+
+            }
+
+            return new Blob([buffer], { type: "audio/wav" });
+
+        }
+
+        // Start Recording
+
+        startBtn.addEventListener("click", async function () {
+
+            try {
+
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: true
+                });
+
+                audioChunks = [];
+                audioFile.value = "";
+                submitBtn.disabled = true;
+
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = function (event) {
+
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+
+                };
+
+                mediaRecorder.onstop = async function () {
+
+                    try {
+
+                        statusText.textContent = "Converting audio to WAV...";
+
+                        const recordedBlob = new Blob(audioChunks, {
+                            type: mediaRecorder.mimeType
+                        });
+
+                        const audioContext = new AudioContext();
+
+                        const audioData = await recordedBlob.arrayBuffer();
+
+                        const decodedAudio =
+                            await audioContext.decodeAudioData(audioData);
+
+                        const wavBlob = convertToWav(decodedAudio);
+
+                        await audioContext.close();
+
+                        const wavFile = new File(
+                            [wavBlob],
+                            "recording.wav",
+                            { type: "audio/wav" }
+                        );
+
+                        const dataTransfer = new DataTransfer();
+
+                        dataTransfer.items.add(wavFile);
+                        audioFile.files = dataTransfer.files;
+
+                        audioPreview.src = URL.createObjectURL(wavBlob);
+                        audioPreview.hidden = false;
+
+                        submitBtn.disabled = false;
+
+                        statusText.textContent =
+                            "WAV conversion successful! Now click Submit Voice.";
+
+                    } catch (error) {
+
+                        console.error("Audio conversion error:", error);
+
+                        statusText.textContent =
+                            "Audio conversion failed. Please record again.";
+
+                    } finally {
+
+                        stream.getTracks().forEach(track => track.stop());
+
+                    }
+
+                };
+
+                mediaRecorder.start();
+
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+
+                statusText.textContent = "🔴 Recording in progress...";
+
+            } catch (error) {
+
+                console.error(error);
+
+                statusText.textContent =
+                    "Microphone access failed. Please allow microphone permission.";
+
+            }
+
+        });
+
+        // Stop Recording
+
+        stopBtn.addEventListener("click", function () {
+
+            if (mediaRecorder && mediaRecorder.state === "recording") {
+
+                mediaRecorder.stop();
+
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+
+            }
+
+        });
+
+        // Validate Voice Form
+
+        document.getElementById("voiceForm").addEventListener(
+            "submit",
+            function (event) {
+
+                if (!audioFile.files.length) {
+
+                    event.preventDefault();
+
+                    statusText.textContent =
+                        "Please record your voice first.";
+
+                }
+
+            }
+        );
+
+        // Text to Speech
+
+        document.getElementById("ttsForm").addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+                const formData = new FormData(this);
+
+                const status = document.getElementById("ttsStatus");
+                const player = document.getElementById("ttsPlayer");
+
+                status.textContent = "Generating voice...";
+
+                try {
+
+                    const response = await fetch("/speak", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error("Voice generation failed");
+                    }
+
+                    const audioBlob = await response.blob();
+
+                    player.src = URL.createObjectURL(audioBlob);
+                    player.hidden = false;
+
+                    status.textContent = "Voice generated successfully!";
+
+                    await player.play();
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    status.textContent =
+                        "Voice generation failed. Check terminal.";
+
+                }
+
+            }
+        );
+
+    </script>
+
+</body>
+</html>
