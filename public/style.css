@@ -37,19 +37,6 @@ header {
     box-shadow: 0 12px 30px rgba(22, 45, 105, .14);
 }
 
-.auth-header {
-    padding: 19px max(20px, calc((100% - 1220px) / 2));
-}
-
-.auth-header h1 {
-    margin: 0 0 3px;
-    font-family: 'Manrope', 'Segoe UI', sans-serif;
-    font-size: 20px;
-    letter-spacing: -.03em;
-}
-
-.auth-header p { margin: 0; color: #d2ddfa; font-size: 13px; }
-
 .topbar {
     width: min(100%, 1220px);
     min-height: 86px;
@@ -87,42 +74,18 @@ header {
 .brand-copy strong span { color: #b9ccff; }
 .brand-copy small { color: #d2ddfa; font-size: 12px; }
 
-.account-bar {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.shop-chip {
+.header-tag {
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    max-width: min(48vw, 300px);
-    padding: 7px 12px 7px 7px;
-    overflow: hidden;
     border: 1px solid rgba(255, 255, 255, .2);
     border-radius: 999px;
+    padding: 8px 13px;
     background: rgba(255, 255, 255, .1);
-    color: #f7f9ff;
+    color: #e6ecff;
     font-size: 13px;
     font-weight: 600;
-    text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.shop-avatar {
-    width: 28px;
-    height: 28px;
-    flex: 0 0 auto;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    background: #dce7ff;
-    color: #234293;
-    font-size: 12px;
-    font-weight: 700;
 }
 
 main {
@@ -314,9 +277,6 @@ button {
 
 button:hover { transform: translateY(-1px); background: var(--brand-dark); box-shadow: 0 6px 13px rgba(49, 86, 200, .2); }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #9cb2ff; outline-offset: 2px; }
-.logout-button { min-height: 38px; padding: 8px 13px; border: 1px solid rgba(255, 255, 255, .24); background: rgba(255, 255, 255, .12); box-shadow: none; font-size: 12px; }
-.logout-button:hover { background: rgba(255, 255, 255, .22); box-shadow: none; }
-
 .workflow-grid form { align-items: stretch; flex-direction: column; gap: 12px; }
 .workflow-grid form input, .workflow-grid form select, .workflow-grid form button { width: 100%; }
 .workflow-grid form label { align-self: flex-start; margin: -2px 0 -7px; }
@@ -338,14 +298,6 @@ tbody tr:hover td { background: #fafbfe; }
 .delete-form { width: max-content; max-width: 100%; flex: 0 0 auto; margin: 0; }
 .delete-form button { min-height: 36px; padding: 7px 11px; background: #fff1f2; color: var(--red); box-shadow: none; white-space: nowrap; }
 .delete-form button:hover { background: #ffe0e4; box-shadow: none; }
-.auth-main { width: min(100%, 500px); padding-top: clamp(36px, 9vh, 90px); }
-.auth-panel { padding: clamp(22px, 5vw, 34px); }
-.auth-panel form { align-items: stretch; flex-direction: column; gap: 11px; }
-.auth-panel label { margin: 3px 0 -5px; }
-.auth-panel input, .auth-panel button { width: 100%; }
-.auth-panel a { color: var(--brand); font-weight: 700; text-decoration-thickness: 1px; text-underline-offset: 3px; }
-.auth-panel > p { margin: 18px 0 0; color: var(--muted); font-size: 13px; }
-
 audio { display: block; width: min(100%, 400px); max-width: 100%; }
 
 @media (max-width: 900px) {
@@ -359,10 +311,7 @@ audio { display: block; width: min(100%, 400px); max-width: 100%; }
     .brand-mark { width: 40px; height: 40px; }
     .brand-copy strong { font-size: 15px; }
     .brand-copy small { font-size: 11px; }
-    .account-bar { gap: 7px; }
-    .shop-chip { max-width: 46vw; padding-right: 8px; font-size: 11px; }
-    .shop-avatar { width: 25px; height: 25px; }
-    .logout-button { min-height: 35px; padding: 7px 10px; }
+    .header-tag { padding: 7px 10px; font-size: 11px; }
     main { padding: 25px 15px 44px; }
     .dashboard-intro { align-items: flex-start; flex-direction: column; gap: 13px; margin-bottom: 18px; }
     .workspace-badge { padding: 6px 10px; }
@@ -377,8 +326,6 @@ audio { display: block; width: min(100%, 400px); max-width: 100%; }
     .panel-heading .panel-note { max-width: 42%; overflow: hidden; text-overflow: ellipsis; }
     form { align-items: stretch; flex-direction: column; gap: 10px; }
     form input, form select, form button { width: 100%; min-width: 0; }
-    .account-bar form { width: auto; flex-direction: row; align-items: center; }
-    .account-bar form button { width: auto; }
     .voice-buttons { gap: 9px; }
     .voice-buttons button { flex: 1 1 145px; padding-inline: 11px; }
     #voiceForm #submitBtn { width: 100%; }
@@ -387,8 +334,7 @@ audio { display: block; width: min(100%, 400px); max-width: 100%; }
 
 @media (max-width: 390px) {
     .topbar { flex-wrap: wrap; gap: 12px; }
-    .account-bar { width: 100%; justify-content: space-between; }
-    .shop-chip { max-width: 68vw; }
+    .header-tag { display: none; }
     .stats { grid-template-columns: 1fr; }
     .stat-card:last-child { grid-column: auto; }
     .panel-heading { flex-direction: column; }

@@ -19,13 +19,7 @@
                     <small>Smart shop management</small>
                 </span>
             </a>
-            <div class="account-bar">
-                <span class="shop-chip"><span class="shop-avatar">{{ session.get('shop_name', 'S')[:1]|upper }}</span>{{ session.get('shop_name', 'Your shop') }}</span>
-                <form action="{{ url_for('logout') }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="logout-button">Log out</button>
-                </form>
-            </div>
+            <span class="header-tag"><span class="status-dot"></span>Voice-powered shop dashboard</span>
         </div>
     </header>
 

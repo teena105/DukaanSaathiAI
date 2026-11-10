@@ -1,4 +1,4 @@
-"""Database helpers for local SQLite and hosted PostgreSQL deployments."""
+"""Database helpers for a single-shop app on SQLite or hosted PostgreSQL."""
 
 import os
 import re
@@ -42,9 +42,7 @@ class PostgresConnection:
         self._connection = connection
 
     def execute(self, statement, parameters=()):
-        return self._connection.execute(
-            re.sub(r"\?", "%s", statement), parameters
-        )
+        return self._connection.execute(re.sub(r"\?", "%s", statement), parameters)
 
     def commit(self):
         self._connection.commit()
@@ -67,12 +65,6 @@ def get_db_connection():
         connection = psycopg.connect(DATABASE_URL, row_factory=hybrid_row_factory)
         return PostgresConnection(connection)
 
-    if os.getenv("VERCEL"):
-        raise RuntimeError(
-            "Set DATABASE_URL to a hosted PostgreSQL connection string in Vercel. "
-            "SQLite storage on Vercel is temporary and is not supported for shop data."
-        )
-
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
@@ -84,16 +76,8 @@ def init_db():
 
     if using_postgres():
         statements = [
-            """CREATE TABLE IF NOT EXISTS accounts (
-                id BIGSERIAL PRIMARY KEY,
-                shop_name TEXT NOT NULL,
-                email TEXT NOT NULL UNIQUE,
-                password_hash TEXT NOT NULL,
-                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-            )""",
             """CREATE TABLE IF NOT EXISTS products (
                 id BIGSERIAL PRIMARY KEY,
-                shop_id BIGINT REFERENCES accounts(id),
                 name TEXT NOT NULL,
                 price DOUBLE PRECISION NOT NULL,
                 stock DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -102,7 +86,6 @@ def init_db():
             )""",
             """CREATE TABLE IF NOT EXISTS sales (
                 id BIGSERIAL PRIMARY KEY,
-                shop_id BIGINT REFERENCES accounts(id),
                 product_id BIGINT,
                 customer_name TEXT,
                 quantity DOUBLE PRECISION NOT NULL,
@@ -112,28 +95,18 @@ def init_db():
                 sale_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (product_id) REFERENCES products(id)
             )""",
-            "ALTER TABLE products ADD COLUMN IF NOT EXISTS shop_id BIGINT REFERENCES accounts(id)",
-            "ALTER TABLE sales ADD COLUMN IF NOT EXISTS shop_id BIGINT REFERENCES accounts(id)",
             "ALTER TABLE products ADD COLUMN IF NOT EXISTS unit TEXT NOT NULL DEFAULT 'kg'",
             "ALTER TABLE products ADD COLUMN IF NOT EXISTS active INTEGER NOT NULL DEFAULT 1",
             "ALTER TABLE sales ADD COLUMN IF NOT EXISTS customer_name TEXT",
             "ALTER TABLE sales ADD COLUMN IF NOT EXISTS unit_price DOUBLE PRECISION NOT NULL DEFAULT 0",
             "ALTER TABLE sales ADD COLUMN IF NOT EXISTS unit TEXT NOT NULL DEFAULT 'kg'",
-            "CREATE INDEX IF NOT EXISTS products_shop_id_idx ON products(shop_id)",
-            "CREATE INDEX IF NOT EXISTS sales_shop_id_idx ON sales(shop_id)",
+            "CREATE INDEX IF NOT EXISTS products_active_idx ON products(active)",
+            "CREATE INDEX IF NOT EXISTS sales_date_idx ON sales(sale_date)",
         ]
     else:
         statements = [
-            """CREATE TABLE IF NOT EXISTS accounts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                shop_name TEXT NOT NULL,
-                email TEXT NOT NULL UNIQUE,
-                password_hash TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )""",
             """CREATE TABLE IF NOT EXISTS products (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                shop_id INTEGER REFERENCES accounts(id),
                 name TEXT NOT NULL,
                 price REAL NOT NULL,
                 stock REAL NOT NULL DEFAULT 0,
@@ -142,7 +115,6 @@ def init_db():
             )""",
             """CREATE TABLE IF NOT EXISTS sales (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                shop_id INTEGER REFERENCES accounts(id),
                 product_id INTEGER,
                 customer_name TEXT,
                 quantity REAL NOT NULL,
@@ -161,8 +133,6 @@ def init_db():
         sales_columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(sales)").fetchall()
         }
-        if "shop_id" not in sales_columns:
-            conn.execute("ALTER TABLE sales ADD COLUMN shop_id INTEGER REFERENCES accounts(id)")
         for column, declaration in (
             ("customer_name", "TEXT"),
             ("unit_price", "REAL NOT NULL DEFAULT 0"),
@@ -174,8 +144,6 @@ def init_db():
         product_columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(products)").fetchall()
         }
-        if "shop_id" not in product_columns:
-            conn.execute("ALTER TABLE products ADD COLUMN shop_id INTEGER REFERENCES accounts(id)")
         for column, declaration in (
             ("unit", "TEXT NOT NULL DEFAULT 'kg'"),
             ("active", "INTEGER NOT NULL DEFAULT 1"),
@@ -183,8 +151,8 @@ def init_db():
             if column not in product_columns:
                 conn.execute(f"ALTER TABLE products ADD COLUMN {column} {declaration}")
 
-        conn.execute("CREATE INDEX IF NOT EXISTS products_shop_id_idx ON products(shop_id)")
-        conn.execute("CREATE INDEX IF NOT EXISTS sales_shop_id_idx ON sales(shop_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS products_active_idx ON products(active)")
+        conn.execute("CREATE INDEX IF NOT EXISTS sales_date_idx ON sales(sale_date)")
 
     conn.commit()
     conn.close()

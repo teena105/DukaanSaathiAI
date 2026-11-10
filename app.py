@@ -13,9 +13,7 @@ import requests
 import time
 import secrets
 import hmac
-from datetime import timedelta
 from dotenv import load_dotenv
-from werkzeug.security import check_password_hash, generate_password_hash
 
 load_dotenv()
 
@@ -34,7 +32,6 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
     SESSION_COOKIE_SECURE=bool(os.getenv("VERCEL")),
-    PERMANENT_SESSION_LIFETIME=timedelta(hours=12),
 )
 
 print("Gnani API Key Loaded:", bool(GNANI_API_KEY))
@@ -65,108 +62,12 @@ def add_csrf_token():
 
 
 @app.before_request
-def require_login_and_validate_csrf():
-    public_endpoints = {"login", "register", "static", "stylesheet"}
-    if request.endpoint not in public_endpoints and not session.get("shop_id"):
-        return redirect(url_for("login"))
-
+def validate_csrf():
     if request.method == "POST":
         submitted = request.form.get("csrf_token") or request.headers.get("X-CSRF-Token", "")
         expected = session.get("_csrf_token", "")
         if not expected or not submitted or not hmac.compare_digest(submitted, expected):
             abort(400, description="Invalid or expired form token. Refresh and try again.")
-
-
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    if session.get("shop_id"):
-        return redirect(url_for("dashboard"))
-
-    if request.method == "POST":
-        shop_name = request.form.get("shop_name", "").strip()
-        email = request.form.get("email", "").strip().casefold()
-        password = request.form.get("password", "")
-
-        if not shop_name or len(shop_name) > 120:
-            flash("Enter a shop name (up to 120 characters).")
-            return render_template("register.html")
-        if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
-            flash("Enter a valid email address.")
-            return render_template("register.html")
-        if len(password) < 10:
-            flash("Use a password with at least 10 characters.")
-            return render_template("register.html")
-
-        conn = get_db_connection()
-        try:
-            existing = conn.execute("SELECT id FROM accounts WHERE email = ?", (email,)).fetchone()
-            if existing:
-                flash("An account with this email already exists. Please log in.")
-                return render_template("register.html")
-
-            account = conn.execute(
-                "INSERT INTO accounts (shop_name, email, password_hash) VALUES (?, ?, ?) RETURNING id",
-                (shop_name, email, generate_password_hash(password)),
-            ).fetchone()
-            account_id = account["id"]
-
-            account_count = conn.execute("SELECT COUNT(*) FROM accounts").fetchone()[0]
-            if account_count == 1:
-                # Preserve data from the original single-shop app for its first owner.
-                conn.execute("UPDATE products SET shop_id = ? WHERE shop_id IS NULL", (account_id,))
-                conn.execute("UPDATE sales SET shop_id = ? WHERE shop_id IS NULL", (account_id,))
-
-            conn.commit()
-        except Exception:
-            conn.rollback()
-            flash("Could not create the account. Please try again.")
-            return render_template("register.html")
-        finally:
-            conn.close()
-
-        session.clear()
-        session.permanent = True
-        session["shop_id"] = account_id
-        session["shop_name"] = shop_name
-        flash("Shop account created. Welcome to DukaanSaathi AI!")
-        return redirect(url_for("dashboard"))
-
-    return render_template("register.html")
-
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if session.get("shop_id"):
-        return redirect(url_for("dashboard"))
-
-    if request.method == "POST":
-        email = request.form.get("email", "").strip().casefold()
-        password = request.form.get("password", "")
-        conn = get_db_connection()
-        try:
-            account = conn.execute(
-                "SELECT id, shop_name, password_hash FROM accounts WHERE email = ?",
-                (email,),
-            ).fetchone()
-        finally:
-            conn.close()
-
-        if account and check_password_hash(account["password_hash"], password):
-            session.clear()
-            session.permanent = True
-            session["shop_id"] = account["id"]
-            session["shop_name"] = account["shop_name"]
-            return redirect(url_for("dashboard"))
-
-        flash("Email or password is incorrect.")
-
-    return render_template("login.html")
-
-
-@app.route("/logout", methods=["POST"])
-def logout():
-    session.clear()
-    return redirect(url_for("login"))
 
 
 def understand_sale_command(transcript, products):
@@ -441,28 +342,23 @@ def dashboard():
     conn = get_db_connection()
 
     products = conn.execute(
-        "SELECT * FROM products WHERE shop_id = ? AND active = 1 ORDER BY id DESC",
-        (session["shop_id"],),
+        "SELECT * FROM products WHERE active = 1 ORDER BY id DESC"
     ).fetchall()
 
     total_products = conn.execute(
-        "SELECT COUNT(*) FROM products WHERE shop_id = ? AND active = 1",
-        (session["shop_id"],),
+        "SELECT COUNT(*) FROM products WHERE active = 1"
     ).fetchone()[0]
 
     total_sales = conn.execute(
-        "SELECT COALESCE(SUM(total), 0) FROM sales WHERE shop_id = ?",
-        (session["shop_id"],),
+        "SELECT COALESCE(SUM(total), 0) FROM sales"
     ).fetchone()[0]
 
     low_stock = conn.execute(
-        "SELECT COUNT(*) FROM products WHERE shop_id = ? AND active = 1 AND stock <= 5",
-        (session["shop_id"],),
+        "SELECT COUNT(*) FROM products WHERE active = 1 AND stock <= 5"
     ).fetchone()[0]
 
     archived_products = conn.execute(
-        "SELECT id, name FROM products WHERE shop_id = ? AND active = 0 ORDER BY id DESC",
-        (session["shop_id"],),
+        "SELECT id, name FROM products WHERE active = 0 ORDER BY id DESC"
     ).fetchall()
 
     recent_sales = conn.execute(
@@ -470,10 +366,8 @@ def dashboard():
                   sales.unit_price, sales.total, sales.sale_date,
                   products.name AS product_name
            FROM sales LEFT JOIN products
-             ON products.id = sales.product_id AND products.shop_id = sales.shop_id
-           WHERE sales.shop_id = ?
-           ORDER BY sales.id DESC LIMIT 10""",
-        (session["shop_id"],),
+             ON products.id = sales.product_id
+           ORDER BY sales.id DESC LIMIT 10"""
     ).fetchall()
 
     conn.close()
@@ -513,8 +407,8 @@ def add_product():
 
     conn = get_db_connection()
     duplicate = conn.execute(
-        "SELECT id FROM products WHERE shop_id = ? AND LOWER(name) = LOWER(?)",
-        (session["shop_id"], name),
+        "SELECT id FROM products WHERE LOWER(name) = LOWER(?)",
+        (name,),
     ).fetchone()
     conn.close()
     if duplicate:
@@ -524,9 +418,9 @@ def add_product():
     conn = get_db_connection()
 
     conn.execute(
-        """INSERT INTO products (shop_id, name, price, stock, unit)
-           VALUES (?, ?, ?, ?, ?)""",
-        (session["shop_id"], name, price, stock, unit)
+        """INSERT INTO products (name, price, stock, unit)
+           VALUES (?, ?, ?, ?)""",
+        (name, price, stock, unit)
     )
 
     conn.commit()
@@ -539,8 +433,8 @@ def delete_product(product_id):
     conn = get_db_connection()
 
     product = conn.execute(
-        "SELECT id FROM products WHERE id = ? AND shop_id = ? AND active = 1",
-        (product_id, session["shop_id"]),
+        "SELECT id FROM products WHERE id = ? AND active = 1",
+        (product_id,),
     ).fetchone()
     if product is None:
         conn.close()
@@ -549,14 +443,14 @@ def delete_product(product_id):
 
     # Preserve sales history by archiving products that have been sold.
     sale = conn.execute(
-        "SELECT id FROM sales WHERE product_id = ? AND shop_id = ? LIMIT 1",
-        (product_id, session["shop_id"]),
+        "SELECT id FROM sales WHERE product_id = ? LIMIT 1",
+        (product_id,),
     ).fetchone()
 
     if sale:
         conn.execute(
-            "UPDATE products SET active = 0 WHERE id = ? AND shop_id = ?",
-            (product_id, session["shop_id"]),
+            "UPDATE products SET active = 0 WHERE id = ?",
+            (product_id,),
         )
         conn.commit()
         conn.close()
@@ -565,8 +459,8 @@ def delete_product(product_id):
 
     # Delete product if no sales history exists
     conn.execute(
-        "DELETE FROM products WHERE id = ? AND shop_id = ?",
-        (product_id, session["shop_id"]),
+        "DELETE FROM products WHERE id = ?",
+        (product_id,),
     )
 
     conn.commit()
@@ -580,8 +474,8 @@ def delete_product(product_id):
 def restore_product(product_id):
     conn = get_db_connection()
     result = conn.execute(
-        "UPDATE products SET active = 1 WHERE id = ? AND shop_id = ? AND active = 0",
-        (product_id, session["shop_id"]),
+        "UPDATE products SET active = 1 WHERE id = ? AND active = 0",
+        (product_id,),
     )
     conn.commit()
     conn.close()
@@ -602,8 +496,8 @@ def confirm_voice_product():
 
     conn = get_db_connection()
     duplicate = conn.execute(
-        "SELECT id FROM products WHERE shop_id = ? AND LOWER(name) = LOWER(?)",
-        (session["shop_id"], pending["name"]),
+        "SELECT id FROM products WHERE LOWER(name) = LOWER(?)",
+        (pending["name"],),
     ).fetchone()
     if duplicate:
         conn.close()
@@ -612,8 +506,8 @@ def confirm_voice_product():
         return redirect(url_for("dashboard"))
 
     conn.execute(
-        "INSERT INTO products (shop_id, name, price, stock, unit) VALUES (?, ?, ?, ?, ?)",
-        (session["shop_id"], pending["name"], pending["price"], pending["quantity"], pending["unit"]),
+        "INSERT INTO products (name, price, stock, unit) VALUES (?, ?, ?, ?)",
+        (pending["name"], pending["price"], pending["quantity"], pending["unit"]),
     )
     conn.commit()
     conn.close()
@@ -648,8 +542,8 @@ def sell_product():
 
     try:
         product = conn.execute(
-            "SELECT * FROM products WHERE id = ? AND shop_id = ? AND active = 1",
-            (product_id, session["shop_id"]),
+            "SELECT * FROM products WHERE id = ? AND active = 1",
+            (product_id,),
         ).fetchone()
 
         if product is None:
@@ -664,8 +558,8 @@ def sell_product():
             total = unit_price * quantity
 
             update_result = conn.execute(
-                "UPDATE products SET stock = stock - ? WHERE id = ? AND shop_id = ? AND stock >= ?",
-                (quantity, product_id, session["shop_id"], quantity)
+                "UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?",
+                (quantity, product_id, quantity)
             )
             if update_result.rowcount != 1:
                 conn.rollback()
@@ -674,9 +568,9 @@ def sell_product():
 
             conn.execute(
                 """INSERT INTO sales
-                (shop_id, product_id, customer_name, quantity, unit_price, total, unit)
-                VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (session["shop_id"], product_id, customer_name, quantity,
+                (product_id, customer_name, quantity, unit_price, total, unit)
+                VALUES (?, ?, ?, ?, ?, ?)""",
+                (product_id, customer_name, quantity,
                  unit_price, total, unit)
             )
 
@@ -752,8 +646,8 @@ def transcribe_audio():
 
                 conn = get_db_connection()
                 existing = conn.execute(
-                    "SELECT id FROM products WHERE shop_id = ? AND LOWER(name) = LOWER(?)",
-                    (session["shop_id"], name),
+                    "SELECT id FROM products WHERE LOWER(name) = LOWER(?)",
+                    (name,),
                 ).fetchone()
                 conn.close()
                 if existing:
@@ -773,8 +667,7 @@ def transcribe_audio():
 
             conn = get_db_connection()
             products = conn.execute(
-                "SELECT * FROM products WHERE shop_id = ? AND active = 1",
-                (session["shop_id"],),
+                "SELECT * FROM products WHERE active = 1"
             ).fetchall()
             conn.close()
 
@@ -830,8 +723,7 @@ def transcribe_audio():
             try:
                 product = next(
                     (p for p in conn.execute(
-                        "SELECT * FROM products WHERE shop_id = ? AND active = 1",
-                        (session["shop_id"],),
+                        "SELECT * FROM products WHERE active = 1"
                     ).fetchall()
                      if p["name"].casefold() == str(product_name).strip().casefold()),
                     None,
@@ -922,8 +814,8 @@ def confirm_voice_sale():
 
     try:
         product = conn.execute(
-            "SELECT * FROM products WHERE id = ? AND shop_id = ? AND active = 1",
-            (pending_sale["product_id"], session["shop_id"]),
+            "SELECT * FROM products WHERE id = ? AND active = 1",
+            (pending_sale["product_id"],),
         ).fetchone()
 
         if product is None:
@@ -952,8 +844,8 @@ def confirm_voice_sale():
         update_result = conn.execute(
             """UPDATE products
                SET stock = stock - ?
-               WHERE id = ? AND shop_id = ? AND stock >= ?""",
-            (quantity, product["id"], session["shop_id"], quantity)
+               WHERE id = ? AND stock >= ?""",
+            (quantity, product["id"], quantity)
         )
 
         if update_result.rowcount != 1:
@@ -965,10 +857,9 @@ def confirm_voice_sale():
         # Save confirmed sale
         conn.execute(
             """INSERT INTO sales
-               (shop_id, product_id, customer_name, quantity, unit_price, total, unit)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+               (product_id, customer_name, quantity, unit_price, total, unit)
+               VALUES (?, ?, ?, ?, ?, ?)""",
             (
-                session["shop_id"],
                 product["id"],
                 pending_sale["customer_name"],
                 quantity,

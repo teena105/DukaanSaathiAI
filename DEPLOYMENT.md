@@ -1,26 +1,22 @@
 # Vercel deployment
 
-The Flask app is detected from the root `app.py` file. Static CSS is served from `public/style.css`.
+DukaanSaathi AI is a single-shop dashboard with no login or registration. It is detected by Vercel from the root `app.py`; the deployed stylesheet is `public/style.css`.
 
-## Shop accounts
+## Environment variables
 
-Each shop creates an account at `/register` with its shop name, email, and password. Passwords are stored as one-way hashes. Product and sale rows are scoped to that account's `shop_id`; users must log in to access the dashboard. Forms use CSRF tokens and secure session cookies on Vercel.
+Required:
 
-## Required Vercel environment variables
-
-Set these in **Project Settings → Environment Variables** for Production and Preview:
-
-- `GNANI_API_KEY` — Gnani API key for Prisma STT and Timbre TTS.
-- `FLASK_SECRET_KEY` — a long random secret used to sign sessions.
-- `DATABASE_URL` — a PostgreSQL connection string from a hosted provider. Use a pooled connection string if the provider offers one, and require TLS (`sslmode=require`).
+- `GNANI_API_KEY` — Gnani API key for Prisma speech-to-text and Timbre text-to-speech.
+- `FLASK_SECRET_KEY` — a long random value used to secure Flask sessions and voice confirmations.
 
 Optional:
 
-- `GEMINI_API_KEY` — Gemini API key for command understanding; the local parser fallback remains available when omitted or unavailable.
+- `DATABASE_URL` — a PostgreSQL connection string for persistent product and sales data. If unset, local development uses `dukaansaathi.db`; Vercel uses temporary `/tmp` SQLite storage, which can reset between instances or deployments.
+- `GEMINI_API_KEY` — Gemini key for command understanding; the local parser is used if Gemini is absent or unavailable.
 - `GEMINI_MODEL` — defaults to `gemini-3.8-flash`.
 
-Never commit `.env` or real API keys. SQLite remains the local development default; Vercel refuses to use temporary SQLite storage for shop data.
+Never commit `.env` or real API keys.
 
 ## Deploy
 
-Import `teena105/DukaanSaathiAI` from GitHub, add the environment variables above, and deploy. Vercel provides the public URL after a successful build. For a multi-shop launch, create the PostgreSQL database first and add its `DATABASE_URL` to Vercel before deploying.
+Import `teena105/DukaanSaathiAI` from GitHub, configure the environment variables, and deploy. Vercel provides the public URL after a successful build.
