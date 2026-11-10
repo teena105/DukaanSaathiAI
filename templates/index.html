@@ -186,37 +186,34 @@
 
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                <input type="text"
-                       name="name"
-                       placeholder="Product name (e.g. Sugar)"
-                       required>
+                <div class="form-field">
+                    <label for="productName">Product name</label>
+                    <input id="productName" type="text" name="name" placeholder="e.g. Sugar" required>
+                </div>
 
-                <label>Product Unit:</label>
+                <div class="form-field">
+                    <label for="productUnit">Unit</label>
+                    <select id="productUnit" name="unit" required>
+                        <option value="kg">Kilogram (kg)</option>
+                        <option value="g">Gram (g)</option>
+                        <option value="litre">Litre</option>
+                        <option value="ml">Millilitre (ml)</option>
+                        <option value="piece">Piece</option>
+                        <option value="packet">Packet</option>
+                    </select>
+                </div>
 
-                <select name="unit" required>
-                    <option value="kg">Kilogram (kg)</option>
-                    <option value="g">Gram (g)</option>
-                    <option value="litre">Litre</option>
-                    <option value="ml">Millilitre (ml)</option>
-                    <option value="piece">Piece</option>
-                    <option value="packet">Packet</option>
-                </select>
+                <div class="form-field">
+                    <label for="productPrice">Price per unit (₹)</label>
+                    <input id="productPrice" type="number" name="price" placeholder="e.g. 45" min="0.01" step="0.01" required>
+                </div>
 
-                <input type="number"
-                       name="price"
-                       placeholder="Selling price per unit (₹)"
-                       min="0.01"
-                       step="0.01"
-                       required>
+                <div class="form-field">
+                    <label for="productStock">Opening stock</label>
+                    <input id="productStock" type="number" name="stock" placeholder="e.g. 20" min="0" step="any" required>
+                </div>
 
-                <input type="number"
-                       name="stock"
-                       placeholder="Available stock quantity"
-                       min="0"
-                       step="any"
-                       required>
-
-                <button type="submit">Add Product</button>
+                <button class="form-submit" type="submit">Add Product</button>
 
             </form>
 
@@ -231,38 +228,30 @@
 
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                <input type="text"
-                       name="customer_name"
-                       placeholder="Customer Name (Optional)">
+                <div class="form-field">
+                    <label for="saleCustomer">Customer (optional)</label>
+                    <input id="saleCustomer" type="text" name="customer_name" placeholder="Customer name">
+                </div>
 
-                <label>Select Product:</label>
+                <div class="form-field">
+                    <label for="saleProduct">Product</label>
+                    <select id="saleProduct" name="product_id" required>
+                        <option value="">Select a product</option>
+                        {% for product in products %}
+                            <option value="{{ product.id }}">
+                                {{ product.name }} — ₹{{ "%.2f"|format(product.price) }}/{{ product.unit }}
+                                (Available: {{ product.stock }} {{ product.unit }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                <select name="product_id" required>
+                <div class="form-field">
+                    <label for="saleQuantity">Quantity sold</label>
+                    <input id="saleQuantity" type="number" name="quantity" placeholder="e.g. 0.5" min="0.01" step="any" required>
+                </div>
 
-                    <option value="">Select a product</option>
-
-                    {% for product in products %}
-
-                        <option value="{{ product.id }}">
-                            {{ product.name }} —
-                            ₹{{ "%.2f"|format(product.price) }}/{{ product.unit }}
-                            (Available: {{ product.stock }} {{ product.unit }})
-                        </option>
-
-                    {% endfor %}
-
-                </select>
-
-                <label>Quantity Sold:</label>
-
-                <input type="number"
-                       name="quantity"
-                       placeholder="Enter quantity (e.g. 0.5)"
-                       min="0.01"
-                       step="any"
-                       required>
-
-                <button type="submit">Record Sale</button>
+                <button class="form-submit" type="submit">Record Sale</button>
 
             </form>
 
