@@ -21,7 +21,10 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "dukaansaathi-local-secret")
+FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY")
+if os.getenv("VERCEL") and not FLASK_SECRET_KEY:
+    raise RuntimeError("Set FLASK_SECRET_KEY in Vercel environment variables.")
+app.secret_key = FLASK_SECRET_KEY or "dukaansaathi-local-secret"
 
 print("Gnani API Key Loaded:", bool(GNANI_API_KEY))
 

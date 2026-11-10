@@ -1,6 +1,11 @@
 import sqlite3
+import os
 
-DATABASE = "dukaansaathi.db"
+DATABASE = os.getenv("DUKAANSAATHI_DATABASE_PATH") or (
+    "/tmp/dukaansaathi.db"
+    if os.getenv("VERCEL")
+    else os.path.join(os.path.dirname(__file__), "dukaansaathi.db")
+)
 
 
 def get_db_connection():
