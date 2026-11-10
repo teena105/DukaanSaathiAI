@@ -1,5 +1,5 @@
 
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, session, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, send_from_directory, session, abort
 from io import BytesIO
 
 from gnani.stt import GnaniSTTClient
@@ -45,6 +45,13 @@ tts_client = GnaniTTSClient(api_key=GNANI_API_KEY)
 init_db()
 
 
+@app.route("/style.css")
+def stylesheet():
+    # Vercel serves public/style.css directly; this fallback serves it in Flask locally.
+    css_directory = "public" if os.getenv("VERCEL") else "static"
+    return send_from_directory(os.path.join(app.root_path, css_directory), "style.css")
+
+
 @app.context_processor
 def add_csrf_token():
     def csrf_token():
@@ -59,7 +66,7 @@ def add_csrf_token():
 
 @app.before_request
 def require_login_and_validate_csrf():
-    public_endpoints = {"login", "register", "static"}
+    public_endpoints = {"login", "register", "static", "stylesheet"}
     if request.endpoint not in public_endpoints and not session.get("shop_id"):
         return redirect(url_for("login"))
 

@@ -4,97 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DukaanSaathi AI</title>
-    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/style.css?v=dashboard-20261110">
 
-    <style>
-        .voice-panel {
-            text-align: center;
-            background: #ffffff;
-        }
-
-        .voice-panel p {
-            color: #64748b;
-        }
-
-        .voice-buttons {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin: 20px 0;
-        }
-
-        .voice-buttons button {
-            padding: 12px 22px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 15px;
-            color: white;
-        }
-
-        #startBtn {
-            background: #16a34a;
-        }
-
-        #stopBtn {
-            background: #dc2626;
-        }
-
-        #submitBtn {
-            background: #293f82;
-        }
-
-        .voice-buttons button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        #recordingStatus {
-            font-weight: bold;
-            margin: 15px;
-        }
-
-        #audioPreview {
-            width: 100%;
-            max-width: 400px;
-            margin: 15px auto;
-        }
-
-        #voiceForm {
-            margin-top: 15px;
-        }
-
-        .delete-btn {
-            background-color: #dc2626;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        .delete-btn:hover {
-            background-color: #b91c1c;
-        }
-
-        .delete-form {
-            margin: 0;
-        }
-    </style>
 </head>
 
 <body>
 
     <header>
-        <h1>🛍️ DukaanSaathi AI</h1>
-        <p>Smart Voice-Based Shop Management</p>
-        <div class="account-bar">
-            <span>{{ session.get('shop_name', 'Your shop') }}</span>
-            <form action="{{ url_for('logout') }}" method="POST">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit">Log out</button>
-            </form>
+        <div class="topbar">
+            <a class="brand" href="{{ url_for('dashboard') }}" aria-label="DukaanSaathi AI home">
+                <span class="brand-mark" aria-hidden="true">D</span>
+                <span class="brand-copy">
+                    <strong>DukaanSaathi <span>AI</span></strong>
+                    <small>Smart shop management</small>
+                </span>
+            </a>
+            <div class="account-bar">
+                <span class="shop-chip"><span class="shop-avatar">{{ session.get('shop_name', 'S')[:1]|upper }}</span>{{ session.get('shop_name', 'Your shop') }}</span>
+                <form action="{{ url_for('logout') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="logout-button">Log out</button>
+                </form>
+            </div>
         </div>
     </header>
 
@@ -108,20 +39,32 @@
             {% endif %}
         {% endwith %}
 
+        <section class="dashboard-intro">
+            <div>
+                <p class="eyebrow">SHOP OVERVIEW</p>
+                <h1>Dashboard</h1>
+                <p class="intro-copy">Keep track of your inventory and daily sales in one place.</p>
+            </div>
+            <span class="workspace-badge"><span class="status-dot"></span>Workspace active</span>
+        </section>
+
         <!-- Dashboard Statistics -->
         <section class="stats">
 
-            <div class="stat-card">
+            <div class="stat-card stat-products">
+                <div class="stat-topline"><span class="stat-icon">📦</span><span class="stat-label">INVENTORY</span></div>
                 <h3>Total Products</h3>
                 <p>{{ total_products }}</p>
             </div>
 
-            <div class="stat-card">
+            <div class="stat-card stat-sales">
+                <div class="stat-topline"><span class="stat-icon">₹</span><span class="stat-label">REVENUE</span></div>
                 <h3>Total Sales</h3>
                 <p>₹{{ "%.2f"|format(total_sales) }}</p>
             </div>
 
-            <div class="stat-card">
+            <div class="stat-card stat-low-stock">
+                <div class="stat-topline"><span class="stat-icon">⚠️</span><span class="stat-label">ATTENTION</span></div>
                 <h3>Low Stock Items</h3>
                 <p>{{ low_stock }}</p>
             </div>
@@ -130,7 +73,10 @@
 
         <!-- Recent Sales -->
         <section class="panel">
-            <h2>Recent Sales</h2>
+            <div class="panel-heading">
+                <div><p class="eyebrow">LATEST ACTIVITY</p><h2>Recent Sales</h2></div>
+                <span class="panel-note">{{ recent_sales|length }} latest entries</span>
+            </div>
             <div class="table-wrap">
                 <table>
                     <thead>
@@ -160,6 +106,7 @@
         </section>
 
         <!-- Voice Assistant -->
+        <div class="feature-grid">
         <section class="panel voice-panel">
 
             <h2>🎤 DukaanSaathi Voice Assistant</h2>
@@ -233,8 +180,10 @@
             <p id="ttsStatus"></p>
 
         </section>
+        </div>
 
         <!-- Add New Product -->
+        <div class="workflow-grid">
         <section class="panel">
 
             <h2>Add New Product</h2>
@@ -324,6 +273,7 @@
             </form>
 
         </section>
+        </div>
 
         <!-- Inventory -->
         <section class="panel">
