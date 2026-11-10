@@ -7,3 +7,5 @@ __pycache__/
 dukaansaathi.db
 DukaanSaathiAI.zip
 .pytest_cache/
+
+.vercel
